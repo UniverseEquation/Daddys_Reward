@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shawty's FRT Reward</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.7.0/chart.min.js"></script>
+    <style>
+        body, html {
+            height: 100%;
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #FFC0CB;
+            overflow: hidden;
+        }
+        .container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+        .timer {
+            text-align: center;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            position: relative;
+            overflow: hidden;
+            z-index: 10;
+            width: 80%;
+            max-width: 600px;
+        }
+        #reward {
+            font-size: 48px;
+            color: #4CAF50;
+        }
+        #stopButton {
+            margin-top: 20px;
+            padding: 15px 30px;
+            font-size: 20px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            animation: pulse 2s infinite;
+        }
+        #stopButton:hover {
+            background-color: #45a049;
+        }
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        .flashing-message {
+            position: absolute;
+            top: -40px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: yellow;
+            padding: 5px 10px;
+            border-radius: 5px;
+            animation: flash 1s infinite;
+            white-space: nowrap;
+        }
+        @keyframes flash {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+        .star {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: gold;
+            clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%);
+            animation: starPulse 2s infinite;
+            z-index: -1;
+        }
+        @keyframes starPulse {
+            0%, 100% { transform: scale(1); opacity: 0.8; }
+            50% { transform: scale(1.1); opacity: 1; }
+        }
+        .bouncing-object {
+            position: absolute;
+            font-size: 24px;
+            animation: float 20s linear infinite;
+        }
+        @keyframes float {
+            from { transform: translateX(-50px); }
+            to { transform: translateX(calc(100vw + 50px)); }
+        }
+        #graph {
+            margin-top: 20px;
+            width: 100%;
+            height: 200px;
+            background-color: white;
+        }
+        .confetti {
+            position: fixed;
+            animation: confetti-fall 3s linear infinite;
+            color: gold;
+            font-size: 16px;
+            pointer-events: none;
+            z-index: 100;
+        }
+        @keyframes confetti-fall {
+            0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+            100% { transform: translateY(200px) rotate(720deg); opacity: 0; }
+        }
+        .description {
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        #countdown {
+            color: red;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="timer">
+            <h1>Shawty's FRT Reward</h1>
+            <p class="description">How much of Daddy's spending money is left as a reward for me sitting my radio exam:</p>
+            <div id="reward">$500.00</div>
+            <p><span id="countdown"></span> until end of month</p>
+            <canvas id="graph"></canvas>
+            <button id="stopButton">CLAIM MY REWARD!</button>
+            <div class="flashing-message">↓ Don't click until you've sat the exam! ↓</div>
+        </div>
+    </div>
+
+    <script>
+        // Set the fixed start date to September 16, 2024, at 4:02pm NZST
+        const startDate = new Date('2024-09-16T16:02:00+12:00');
+        const endDate = new Date(startDate.getFullYear(), startDate.getMonth() + 1, 0, 23, 59, 59);
+        const startReward = 500;
+        let timerRunning = true;
+
+        // Create stars inside the timer
+        const timerElement = document.querySelector('.timer');
+        const graphElement = document.getElementById('graph');
+        
+        // Calculate available space for stars
+        const timerRect = timerElement.getBoundingClientRect();
+        const graphRect = graphElement.getBoundingClientRect();
+        const availableHeight = graphRect.top - timerRect.top;
+        const availableWidth = timerRect.width;
+        
+        // Create a grid for star placement
+        const gridSize = 5;
+        const cellWidth = availableWidth / gridSize;
+        const cellHeight = availableHeight / gridSize;
+        
+        for (let i = 0; i < gridSize; i++) {
+            for (let j = 0; j < gridSize; j++) {
+                const star = document.createElement('div');
+                star.classList.add('star');
+                star.style.left = `${j * cellWidth + Math.random() * cellWidth}px`;
+                star.style.top = `${i * cellHeight + Math.random() * cellHeight}px`;
+                timerElement.appendChild(star);
+            }
+        }
+
+        // Create bouncing objects
+        const objects = ['👗', '👓', '👛', '👙', '💄', '🐰', '👠', '💋', '👜', '👚', '👒', '💍', '💎', '🎀'];
+        for (let i = 0; i < 30; i++) {
+            const div = document.createElement('div');
+            div.classList.add('bouncing-object');
+            div.textContent = objects[Math.floor(Math.random() * objects.length)];
+            div.style.top = `${Math.random() * 100}vh`;
+            div.style.animationDuration = `${15 + Math.random() * 10}s`;
+            div.style.animationDelay = `-${Math.random() * 15}s`;
+            document.body.appendChild(div);
+        }
+
+        // Set up the graph
+        const ctx = document.getElementById('graph').getContext('2d');
+        const totalDays = Math.ceil((endDate - startDate) / (1000 * 60 * 60 * 24));
+        const labels = Array.from({length: totalDays}, (_, i) => i);
+        const data = labels.map(day => startReward * (1 - day / (totalDays - 1)));
+
+        const chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Reward Amount',
+                    data: data,
+                    borderColor: 'rgb(75, 192, 192)',
+                    tension: 0.1
+                }, {
+                    label: 'Current Position',
+                    data: [],
+                    pointBackgroundColor: 'red',
+                    pointBorderColor: 'red',
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    showLine: false
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 500,
+                        ticks: {
+                            callback: function(value, index, values) {
+                                return '$' + value;
+                            }
+                        }
+                    },
+                    x: {
+                        title: {
+                            display: true,
+                            text: 'Days'
+                        }
+                    }
+                }
+            }
+        });
+
+        function createConfetti(x, y) {
+            const confetti = document.createElement('div');
+            confetti.textContent = '$';
+            confetti.classList.add('confetti');
+            confetti.style.left = `${x}px`;
+            confetti.style.top = `${y}px`;
+            document.body.appendChild(confetti);
+            setTimeout(() => confetti.remove(), 3000);
+        }
+
+        function updateTimer() {
+            if (!timerRunning) return;
+
+            const now = new Date();
+            const timeLeft = endDate - now;
+            const totalDuration = endDate - startDate;
+            const progress = Math.max(0, Math.min(1, (now - startDate) / totalDuration));
+            const currentReward = startReward * (1 - progress);
+
+            document.getElementById('reward').textContent = '$' + Math.max(0, currentReward).toFixed(2);
+            
+            // Update the graph
+            const daysPassed = (now - startDate) / (1000 * 60 * 60 * 24);
+            chart.data.datasets[1].data = [{x: daysPassed, y: currentReward}];
+            chart.update();
+
+            // Create confetti
+            const chartArea = chart.chartArea;
+            const xPixel = chartArea.left + (chartArea.right - chartArea.left) * (daysPassed / (totalDays - 1));
+            const yPixel = chartArea.bottom - (chartArea.bottom - chartArea.top) * (currentReward / startReward);
+            if (Math.random() < 0.2) {  // 20% chance each frame to create confetti
+                const rect = graphElement.getBoundingClientRect();
+                createConfetti(rect.left + xPixel, rect.top + yPixel);
+            }
+
+            if (timeLeft > 0) {
+                const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+                document.getElementById('countdown').textContent = `${days}d ${hours}h ${minutes}m ${seconds}s`;
+                requestAnimationFrame(updateTimer);
+            } else {
+                document.getElementById('countdown').textContent = "Time's up!";
+                document.getElementById('reward').textContent = '$0.00';
+                document.getElementById('stopButton').disabled = true;
+            }
+        }
+
+        function claimReward() {
+            timerRunning = false;
+            const finalReward = document.getElementById('reward').textContent;
+            const currentTime = new Date().toLocaleString();
+            const message = `
+Congratulations!
+Your final reward amount is: ${finalReward}
+Claimed on: ${currentTime}
+
+Take a screenshot of this message and send it to Daddy for proof to claim your reward!
+`;
+            alert(message);
+            document.getElementById('stopButton').disabled = true;
+        }
+
+        document.getElementById('stopButton').addEventListener('click', claimReward);
+
+        updateTimer();
+    </script>
+</body>
+</html>
